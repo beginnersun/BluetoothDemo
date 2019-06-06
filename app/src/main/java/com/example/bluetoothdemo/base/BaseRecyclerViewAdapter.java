@@ -7,27 +7,35 @@ import android.view.ViewGroup;
 
 import java.util.List;
 
+import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-public abstract class BaseRecyclerViewAdapter extends RecyclerView.Adapter<BaseViewHolder> {
+public abstract class BaseRecyclerViewAdapter extends RecyclerView.Adapter<ViewHolder> {
 
     private List mDatas;
     private Context mContext;
     private onItemClickListener onItemClickListener;
 
+    public BaseRecyclerViewAdapter(List mDatas, Context mContext) {
+        this.mDatas = mDatas;
+        this.mContext = mContext;
+    }
+
     @NonNull
     @Override
-    public BaseViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(mContext).inflate(getLayoutId(viewType),parent,false);
-        return new BaseViewHolder(view);
+        return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull BaseViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         if (onItemClickListener != null){
             this.onItemClickListener.onItemClick(position);
         }
+        holder.itemView.setTag(position);
+        convert(holder,position);
     }
 
     @Override
@@ -35,7 +43,16 @@ public abstract class BaseRecyclerViewAdapter extends RecyclerView.Adapter<BaseV
         return mDatas == null ?0:mDatas.size();
     }
 
-    public abstract int getLayoutId(int viewType);
+    public Object getItem(int position){
+        if (position >=0 && position <getItemCount()){
+            return mDatas.get(position);
+        }
+        return  null;
+    }
+
+    public abstract @LayoutRes int getLayoutId(int viewType);
+
+    public abstract void convert(ViewHolder holder, int position);
 
     public void setOnItemClickListener(BaseRecyclerViewAdapter.onItemClickListener onItemClickListener) {
         this.onItemClickListener = onItemClickListener;
