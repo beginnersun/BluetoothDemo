@@ -5,6 +5,7 @@ import android.content.Context;
 import android.text.TextUtils;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.bluetoothdemo.R;
@@ -15,10 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.LayoutRes;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
-public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter {
+public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter implements View.OnClickListener {
 
     public static final int DEVICE_PHONE = 2;
     public static final int DEVICE_COMPUTER = 1;
@@ -27,10 +26,22 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter {
     public static final int DEVICE_BLUETOOTH = 5;
 
     private int type;
+    private List<Boolean> showOptions;
+    private int old_options_position;
+    private OnOptionsClick onOptionsClick;
+
+    public interface OnOptionsClick{
+        void clickOptions(View view);
+    }
 
     public BluetoothDeviceAdapter( Context mContext,List mDatas, int type) {
         super(mDatas, mContext);
         this.type = type;
+        showOptions = new ArrayList<>(mDatas.size());
+    }
+
+    public void setOnOptionsClick(OnOptionsClick onOptionsClick) {
+        this.onOptionsClick = onOptionsClick;
     }
 
     @Override
@@ -44,8 +55,10 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter {
 
         ImageView dev_type = holder.get(R.id.iv_device_type);
         TextView dev_name = holder.get(R.id.tv_device_name);
-
-        switch (device.getBluetoothClass().getMajorDeviceClass()){
+        LinearLayout options = holder.get(R.id.device_options);
+        TextView connect = holder.get(R.id.connect);
+        TextView send = holder.get(R.id.send);
+        switch (type){
             case DEVICE_COMPUTER:
                 dev_type.setImageResource(R.mipmap.computer);
                 break;
@@ -67,5 +80,36 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter {
         }else {
             dev_name.setText(device.getAddress());
         }
+        if (showOptions.get(position)){
+            options.setVisibility(View.VISIBLE);
+        }else {
+            options.setVisibility(View.GONE);
+        }
+        connect.setTag(position);
+        connect.setOnClickListener(this);
+        send.setOnClickListener(this);
+        send.setTag(position);
     }
+
+    public void showItemOptions(int position){
+        if (old_options_position != -1){
+            hideItemOptions(old_options_position);
+        }
+        showOptions.set(position,true);
+        notifyItemChanged(position);
+        old_options_position = position;
+    }
+
+    private void hideItemOptions(int position){
+        showOptions.set(position,false);
+        notifyItemChanged(position);
+    }
+
+    @Override
+    public void onClick(View view) {
+        if (onOptionsClick != null){
+            onOptionsClick.clickOptions(view);
+        }
+    }
+
 }
