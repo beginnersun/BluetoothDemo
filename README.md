@@ -13,4 +13,9 @@
         -> 得到设备api21之前：在LeScanCallback 的onLeScan中可以得到扫描到的设备（可能有重复)
                   api21之后：在ScanCallback 的onScanResult中返回扫描到的设备result.getDevice();在onScanFailed中得到扫描失败的原因
         -> 链接设备BluetoothGatt gatt = device.connectGatt(this,false,new BluetoothGattCallback())
+        
+   如何区分：device.getType();
+            BluetoothDevice.DEVICE_TYPE_CLASSIC  //经典蓝牙        传输距离短(10) 但是数据量大 功耗大
+            BluetoothDevice.DEVICE_TYPE_LE       //单模（低功耗蓝牙）   传输距离稍长（50m) 数据量小 功耗小
+            BluetoothDevice.DUAL                 //双模蓝牙（以上两种模式都支持）
            
