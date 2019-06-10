@@ -1,5 +1,5 @@
 # BluetoothDemo
-蓝牙详解：\r\n
+蓝牙详解：
    经典蓝牙：
       流程：得到BluetoothAdapter（BluetoothAdapter.getAdapter()) -> 搜索设备（adapter.startDiscovery()) -> 得到周围设备（注册广播接收者，监听
            1、BluetoothAdapter.ACTION_DISCOVERY_FINISHED 搜索完成
