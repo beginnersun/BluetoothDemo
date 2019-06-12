@@ -9,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.bluetoothdemo.R;
+import com.example.bluetoothdemo.activity.bean.DeviceBean;
 import com.example.bluetoothdemo.base.BaseRecyclerViewAdapter;
 import com.example.bluetoothdemo.base.ViewHolder;
 
@@ -26,7 +27,6 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter implements V
     public static final int DEVICE_BLUETOOTH = 5;
 
     private int type;
-    private List<Boolean> showOptions;
     private int old_options_position;
     private OnOptionsClick onOptionsClick;
 
@@ -37,7 +37,6 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter implements V
     public BluetoothDeviceAdapter( Context mContext,List mDatas, int type) {
         super(mDatas, mContext);
         this.type = type;
-        showOptions = new ArrayList<>(mDatas.size());
     }
 
     public void setOnOptionsClick(OnOptionsClick onOptionsClick) {
@@ -51,7 +50,8 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter implements V
 
     @Override
     public void convert(ViewHolder holder, int position) {
-        BluetoothDevice device = (BluetoothDevice) getItem(position);
+        DeviceBean bean = (DeviceBean) getItem(position);
+        BluetoothDevice device = bean.getDevice();
 
         ImageView dev_type = holder.get(R.id.iv_device_type);
         TextView dev_name = holder.get(R.id.tv_device_name);
@@ -80,7 +80,7 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter implements V
         }else {
             dev_name.setText(device.getAddress());
         }
-        if (showOptions.get(position)){
+        if (bean.isShowOptions()){
             options.setVisibility(View.VISIBLE);
         }else {
             options.setVisibility(View.GONE);
@@ -95,13 +95,13 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter implements V
         if (old_options_position != -1){
             hideItemOptions(old_options_position);
         }
-        showOptions.set(position,true);
+        ((DeviceBean)getItem(position)).setShowOptions(true);
         notifyItemChanged(position);
         old_options_position = position;
     }
 
     private void hideItemOptions(int position){
-        showOptions.set(position,false);
+        ((DeviceBean)getItem(position)).setShowOptions(false);
         notifyItemChanged(position);
     }
 
@@ -111,5 +111,4 @@ public class BluetoothDeviceAdapter extends BaseRecyclerViewAdapter implements V
             onOptionsClick.clickOptions(view);
         }
     }
-
 }

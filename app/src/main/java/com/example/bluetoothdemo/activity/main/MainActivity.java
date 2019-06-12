@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -30,8 +31,11 @@ import com.example.bluetoothdemo.activity.main.adapter.BluetoothDeviceAdapter;
 import com.example.bluetoothdemo.base.BaseRecyclerViewAdapter;
 import com.example.bluetoothdemo.base.ViewHolder;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  *
@@ -39,6 +43,7 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    private static final String TAG1 = "MainActivityDevice";
 
     private final int REQUEST_BLUETOOTH = 0x01;
     private BluetoothAdapter bluetoothAdapter;
@@ -75,6 +80,7 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothReceiver bluetoothReceiver;
 
     private BluetoothDevice connect_device;  //准备连接的设备
+    private BluetooothGattCallback connect_callback;
     /**
      * 是否正在扫描蓝牙设备
      */
@@ -97,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void searchBleDevice(){
+    private void searchBleDevice() {
         startLoading();
         bluetoothAdapter.startLeScan(bluetoothScanCallback = new BluetoothScanCallback());  //仅能发现低功耗蓝牙(ble)
         mScaning = true;
@@ -153,17 +159,29 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void clickOptions(View view) {
                 int position = (int) view.getTag();
-                switch (view.getId()){
+                switch (view.getId()) {
                     case R.id.connect:
                         connect_device = phoneDevices.get(position).getDevice();
-                        if (connect_device.getBondState() != BluetoothDevice.BOND_BONDED){
+                        if (connect_device.getBondState() != BluetoothDevice.BOND_BONDED) {
                             connect_device.createBond();
-                        }else {
-                            Toast.makeText(MainActivity.this,"已经配对过了",Toast.LENGTH_SHORT).show();
-                            BluetoothGatt gatt = null;
-                            BluetooothGattCallback callback = new BluetooothGattCallback();
-                            gatt = connect_device.connectGatt(MainActivity.this, false, callback);
-                            callback.setmBluetoothGatt(gatt);
+                        } else {
+                            Toast.makeText(MainActivity.this, "已经配对过了", Toast.LENGTH_SHORT).show();
+                            switch (connect_device.getType()) {
+                                case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+                                    try {
+                                        BluetoothSocket socket = connect_device.createInsecureRfcommSocketToServiceRecord(UUID.fromString("00001106-0000-1000-8000-00805F9B34FB")); //信息传输固定的uuid
+                                        new Thread(new SocketSendRunnable(socket)).start();
+                                    } catch (IOException e) {
+                                        e.printStackTrace();
+                                    }
+                                    break;
+                                case BluetoothDevice.DEVICE_TYPE_LE:
+                                    connect_callback = new BluetooothGattCallback();
+                                    connect_device.connectGatt(MainActivity.this, false, connect_callback);
+                                    break;
+                                case BluetoothDevice.DEVICE_TYPE_DUAL:
+                                    break;
+                            }
                         }
                         break;
                     case R.id.send:
@@ -171,10 +189,57 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
     }
 
-    private void startLoading(){
+
+    class SocketReceiveRunnable implements Runnable{
+
+        BluetoothSocket client;
+
+        public SocketReceiveRunnable(BluetoothSocket client) {
+            this.client = client;
+        }
+
+        @Override
+        public void run() {
+
+        }
+    }
+
+    class SocketSendRunnable implements Runnable{
+
+        private BluetoothSocket client;
+        private OutputStream out;
+        public SocketSendRunnable(BluetoothSocket client) {
+            this.client = client;
+            try {
+                this.client.connect();
+                if (this.client.isConnected()) {
+                    out = this.client.getOutputStream();
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "SocketSendRunnable: 错误信息");
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public void run() {
+            try {
+                if (this.client.isConnected()) {
+                    Log.e(TAG, "run: 准备发送");
+                    out.write("nihao".getBytes());
+                    out.close();
+                    Log.e(TAG, "run: 发送完成");
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    private void startLoading() {
         loadingView.setVisibility(View.VISIBLE);
         loadingView.setImageResource(R.drawable.loading_bg);
         AnimationDrawable animationDrawable = (AnimationDrawable) loadingView.getDrawable();
@@ -182,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
 //        loadingView.getBackground()
     }
 
-    private void stopLoading(){
+    private void stopLoading() {
         loadingView.setImageResource(R.drawable.loading_bg);
         AnimationDrawable animationDrawable = (AnimationDrawable) loadingView.getDrawable();
         animationDrawable.stop();
@@ -208,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
             bluetoothAdapter.stopLeScan(bluetoothScanCallback);
         }
         unregisterReceiver(bluetoothReceiver);
-        if (bluetoothAdapter!=null){
+        if (bluetoothAdapter != null) {
             bluetoothAdapter.cancelDiscovery();
         }
     }
@@ -229,32 +294,48 @@ public class MainActivity extends AppCompatActivity {
 //                        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
 //
 //                        } else if (device.getBondState() == BluetoothDevice.BOND_NONE) {
-                            Log.e(TAG, "onReceive: " + device.getName());
-                            DeviceBean deviceBean = new DeviceBean(device);
-                            normalDevices.add(deviceBean);
-                            deviceMacs.add(device.getAddress());
-                            switch (device.getBluetoothClass().getMajorDeviceClass()) {
-                                case BluetoothClass.Device
-                                        .Major.MISC:
-                                    miscDevices.add(deviceBean);
-                                    miscAdapter.notifyDataSetChanged();
-                                    break;
-                                case BluetoothClass.Device.Major.AUDIO_VIDEO:
-                                    audioDevices.add(deviceBean);
-                                    audioAdapter.notifyDataSetChanged();
-                                    break;
-                                case BluetoothClass.Device.Major.PHONE:
-                                    phoneDevices.add(deviceBean);
-                                    phoneAdapter.notifyDataSetChanged();
-                                    break;
-                                case BluetoothClass.Device.Major.COMPUTER:
-                                    computerDevices.add(deviceBean);
-                                    computerAdapter.notifyDataSetChanged();
-                                    break;
-                                default:
-                                    unknowDevices.add(deviceBean);
-                                    unknowAdapter.notifyDataSetChanged();
-                                    break;
+                        Log.e(TAG, "onReceive: " + device.getName());
+                        DeviceBean deviceBean = new DeviceBean(device);
+                        normalDevices.add(deviceBean);
+                        deviceMacs.add(device.getAddress());
+                        String type = "";
+                        switch (device.getType()) {
+                            case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+                                type = "经典";
+                                break;
+                            case BluetoothDevice.DEVICE_TYPE_LE:
+                                type = "低功耗";
+                                break;
+                            case BluetoothDevice.DEVICE_TYPE_DUAL:
+                                type = "双模";
+                                break;
+                            case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
+                                type = "未知设备";
+                                break;
+                        }
+                        Log.e(TAG1, "onReceive: " + device.getName() + "  属于 " + type);
+                        switch (device.getBluetoothClass().getMajorDeviceClass()) {
+                            case BluetoothClass.Device
+                                    .Major.MISC:
+                                miscDevices.add(deviceBean);
+                                miscAdapter.notifyDataSetChanged();
+                                break;
+                            case BluetoothClass.Device.Major.AUDIO_VIDEO:
+                                audioDevices.add(deviceBean);
+                                audioAdapter.notifyDataSetChanged();
+                                break;
+                            case BluetoothClass.Device.Major.PHONE:
+                                phoneDevices.add(deviceBean);
+                                phoneAdapter.notifyDataSetChanged();
+                                break;
+                            case BluetoothClass.Device.Major.COMPUTER:
+                                computerDevices.add(deviceBean);
+                                computerAdapter.notifyDataSetChanged();
+                                break;
+                            default:
+                                unknowDevices.add(deviceBean);
+                                unknowAdapter.notifyDataSetChanged();
+                                break;
 //                            }
                         }
                     }
@@ -265,10 +346,9 @@ public class MainActivity extends AppCompatActivity {
                     switch (device1.getBondState()) {
                         case BluetoothDevice.BOND_BONDED: //配对成功
                             Log.e(TAG, "onReceive: SCAN_REQUEST SUCCESS");
-
-                            Toast.makeText(MainActivity.this,"已经配对过了",Toast.LENGTH_SHORT).show();
-                            BluetoothGatt gatt = null;
-                            gatt = connect_device.connectGatt(MainActivity.this, false, new BluetooothGattCallback(gatt));
+                            Toast.makeText(MainActivity.this, "已经配对过了", Toast.LENGTH_SHORT).show();
+                            connect_callback = new BluetooothGattCallback();
+                            connect_device.connectGatt(MainActivity.this, false, connect_callback);
 //                            BluetoothGatt gatt = null;
 //                            BluetooothGattCallback callback = new BluetooothGattCallback();
 //                            gatt = connect_device.connectGatt(MainActivity.this, false, callback);
@@ -298,6 +378,23 @@ public class MainActivity extends AppCompatActivity {
                 DeviceBean deviceBean = new DeviceBean(device);
                 normalDevices.add(deviceBean);
                 deviceMacs.add(device.getAddress());
+
+                String type = "";
+                switch (device.getType()) {
+                    case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+                        type = "经典";
+                        break;
+                    case BluetoothDevice.DEVICE_TYPE_LE:
+                        type = "低功耗";
+                        break;
+                    case BluetoothDevice.DEVICE_TYPE_DUAL:
+                        type = "双模";
+                        break;
+                    case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
+                        type = "未知设备";
+                        break;
+                }
+                Log.e(TAG1, "onLeScan: " + device.getName() + "  属于 " + type);
                 switch (device.getBluetoothClass().getMajorDeviceClass()) {
                     case BluetoothClass.Device
                             .Major.MISC:

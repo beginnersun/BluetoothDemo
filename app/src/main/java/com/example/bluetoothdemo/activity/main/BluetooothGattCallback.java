@@ -16,11 +16,11 @@ public class BluetooothGattCallback extends BluetoothGattCallback {
 
     private static final String TAG = "BluetooothGattCallback";
 
-    private BluetoothGatt mBluetoothGatt;
     private List<BluetoothGattService> gattServices;
 
-    public BluetooothGattCallback(BluetoothGatt mBluetoothGatt) {
-        this.mBluetoothGatt = mBluetoothGatt;
+    private BluetoothGatt gatt;
+
+    public BluetooothGattCallback() {
     }
 
     @Override
@@ -36,13 +36,15 @@ public class BluetooothGattCallback extends BluetoothGattCallback {
     @Override
     public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
         super.onConnectionStateChange(gatt, status, newState);
-        if (status == BluetoothProfile.STATE_CONNECTED){
+        if (newState == BluetoothProfile.STATE_CONNECTED){
             Log.i(TAG, "onConnectionStateChange: 连接成功" );
-            mBluetoothGatt.discoverServices(); //寻找服务     搜索外围服务
-            if (gatt == mBluetoothGatt){
-                Log.e(TAG, "onConnectionStateChange: 两个gatt一样");
-            }
-        }else if (status == BluetoothProfile.STATE_DISCONNECTED){
+            this.gatt = gatt;
+//            if (gatt == mBluetoothGatt){
+//                Log.e(TAG, "onConnectionStateChange: 两个gatt一样");
+//            }
+            gatt.discoverServices(); //寻找服务     搜索外围服务
+
+        }else if (newState == BluetoothProfile.STATE_DISCONNECTED){
             Log.i(TAG, "onConnectionStateChange: 断开蓝牙服务");
         }
     }
@@ -154,20 +156,19 @@ public class BluetooothGattCallback extends BluetoothGattCallback {
      * @param character_uuid
      */
     public void openCharacteristicNotification(String service_uuid,String character_uuid){
-        mBluetoothGatt.setCharacteristicNotification(findBluetoothCharacteristic(service_uuid,character_uuid),true);
+        this.gatt.setCharacteristicNotification(findBluetoothCharacteristic(service_uuid,character_uuid),true);
     }
-
 
     public void setValue(String service_uuid,String character_uuid,String value){
         BluetoothGattCharacteristic characteristic = findBluetoothCharacteristic(service_uuid,character_uuid);
         characteristic.setValue(value);
-        mBluetoothGatt.writeCharacteristic(characteristic);
+        this.gatt.writeCharacteristic(characteristic);
     }
 
     public void setVlaue(String character_uuid,String value){
         BluetoothGattCharacteristic characteristic = findBluetoothCharacteristic(character_uuid);
         characteristic.setValue(value);
-        mBluetoothGatt.writeCharacteristic(characteristic);
+        this.gatt.writeCharacteristic(characteristic);
     }
 
 }

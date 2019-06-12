@@ -30,10 +30,15 @@ public abstract class BaseRecyclerViewAdapter extends RecyclerView.Adapter<ViewH
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        if (onItemClickListener != null){
-            this.onItemClickListener.onItemClick(position);
-        }
+    public void onBindViewHolder(@NonNull ViewHolder holder, final int position) {
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (onItemClickListener != null){
+                    onItemClickListener.onItemClick(position);
+                }
+            }
+        });
         holder.itemView.setTag(position);
         convert(holder,position);
     }
