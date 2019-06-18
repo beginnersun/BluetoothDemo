@@ -20,6 +20,7 @@ import android.graphics.drawable.AnimationDrawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -169,9 +170,24 @@ public class MainActivity extends AppCompatActivity {
                             switch (connect_device.getType()) {
                                 case BluetoothDevice.DEVICE_TYPE_CLASSIC:
                                     try {
-                                        BluetoothSocket socket = connect_device.createInsecureRfcommSocketToServiceRecord(UUID.fromString("00001106-0000-1000-8000-00805F9B34FB")); //信息传输固定的uuid
+                                        connect_device.fetchUuidsWithSdp();
+                                        ParcelUuid uuids[] = connect_device.getUuids();
+                                        for (ParcelUuid uuid:uuids){
+                                            Log.e(TAG, "clickOptions: UUids   " + uuid);
+                                        }
+                                        BluetoothSocket socket = connect_device.createRfcommSocketToServiceRecord(UUID.fromString("00001116-0000-1000-8000-00805f9b34fb")); //信息传输固定的uuid
+                                        if (bluetoothAdapter.isDiscovering()){
+                                            bluetoothAdapter.cancelDiscovery();
+                                        }
+                                        Log.e(TAG, "SocketSendRunnable: 准备链接");
+                                        socket.connect();
+                                        if (socket.isConnected()) {
+                                            socket.getOutputStream();
+                                        }
+                                        Log.e(TAG, "clickOptions: 链接成功");
                                         new Thread(new SocketSendRunnable(socket)).start();
                                     } catch (IOException e) {
+                                        Log.e(TAG, "clickOptions: 链接出错");
                                         e.printStackTrace();
                                     }
                                     break;
@@ -213,6 +229,10 @@ public class MainActivity extends AppCompatActivity {
         public SocketSendRunnable(BluetoothSocket client) {
             this.client = client;
             try {
+                if (bluetoothAdapter.isDiscovering()){
+                    bluetoothAdapter.cancelDiscovery();
+                }
+                Log.e(TAG, "SocketSendRunnable: 准备链接");
                 this.client.connect();
                 if (this.client.isConnected()) {
                     out = this.client.getOutputStream();
