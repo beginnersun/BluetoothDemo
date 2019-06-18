@@ -13,33 +13,24 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.bluetoothdemo.R;
+import com.example.bluetoothdemo.activity.bean.CurseBean;
 
 import java.util.List;
 
 import androidx.annotation.Nullable;
 
-public class CourseActivity extends Activity {
+public class SelectCourseActivity extends Activity {
 
     TextView title;
-    TextView tvMenu;
     ListView courses;
-    ImageView ivBack;
-
+    String id;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_course);
-
+        
         title = findViewById(R.id.tv_title);
-        tvMenu = findViewById(R.id.tv_menu);
         courses = findViewById(R.id.course_list);
-        tvMenu.setText("新增课程");
-        tvMenu.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-            }
-        });
         findViewById(R.id.iv_back).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -52,7 +43,7 @@ public class CourseActivity extends Activity {
     public class CourseAdapter extends BaseAdapter {
 
         private Context context;
-        private List datas;
+        private List<CurseBean> datas;
 
         public CourseAdapter(Context context, List datas) {
             this.context = context;
@@ -76,25 +67,28 @@ public class CourseActivity extends Activity {
 
         @Override
         public View getView(final int position, View convertView, ViewGroup parent) {
-            View view = LayoutInflater.from(context).inflate(R.layout.item_course,parent,false);
+            View view = LayoutInflater.from(context).inflate(R.layout.item_select_course,parent,false);
+            final CurseBean bean = (CurseBean) getItem(position);
             TextView num = view.findViewById(R.id.num);
             TextView name = view.findViewById(R.id.name);
             TextView teacher = view.findViewById(R.id.teacher);
             TextView credit = view.findViewById(R.id.credit);
-            Button edit = view.findViewById(R.id.edit);
-            Button delete = view.findViewById(R.id.delete);
+            final Button select = view.findViewById(R.id.select);
 
-            edit.setOnClickListener(new View.OnClickListener() {
+            if (bean.haveId(id)){
+                select.setText("已选");
+            }else {
+                select.setText("选择");
+            }
+
+            select.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
-                }
-            });
-
-            delete.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    datas.remove(position);
+                    if (select.getText().equals("选择")){
+                        bean.addId(id);
+                    }else {
+                        bean.removeId(id);
+                    }
                     notifyDataSetChanged();
                 }
             });
