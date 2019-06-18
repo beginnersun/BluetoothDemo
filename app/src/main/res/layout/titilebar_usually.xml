@@ -4,6 +4,7 @@
                 android:layout_height="46dp"
                 android:background="@color/white">
 
+
     <TextView
         android:id="@+id/tv_title"
         android:layout_width="wrap_content"
@@ -30,17 +31,6 @@
             android:layout_gravity="center"
             android:src="@drawable/csgl_icon_fh"/>
     </FrameLayout>
-
-    <TextView
-        android:id="@+id/tv_text"
-        android:textColor="#1e98ee"
-        android:textSize="15sp"
-        android:visibility="gone"
-        android:layout_alignParentEnd="true"
-        android:layout_centerVertical="true"
-        android:layout_marginEnd="40dp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
 
     <FrameLayout
         android:id="@+id/FL_menu"
