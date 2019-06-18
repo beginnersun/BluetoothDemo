@@ -14,6 +14,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.example.bluetoothdemo.R;
+import com.example.bluetoothdemo.activity.bean.ResultBean;
 
 import java.util.List;
 
@@ -66,7 +67,7 @@ public class StudentActivity extends Activity {
     public class ResultAdapter extends BaseAdapter {
 
         private Context context;
-        private List datas;
+        private List<ResultBean> datas;
 
         public ResultAdapter(Context context, List datas) {
             this.context = context;
@@ -96,6 +97,8 @@ public class StudentActivity extends Activity {
             TextView teacher = view.findViewById(R.id.teacher);
             TextView credit = view.findViewById(R.id.credit);
             TextView result = view.findViewById(R.id.result);
+            ResultBean bean = (ResultBean) getItem(position);
+
 
             return view;
         }
