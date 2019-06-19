@@ -78,7 +78,7 @@ public class TeachActivity extends Activity {
         @Override
         public int getCount() {
             return datas == null?0:datas.size();
-        }   
+        }
 
         @Override
         public Object getItem(int position) {
