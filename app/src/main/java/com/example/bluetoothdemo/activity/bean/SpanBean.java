@@ -26,4 +26,16 @@ public class SpanBean {
     public void setStart(int start) {
         this.start = start;
     }
+
+    public int getStart() {
+        return start;
+    }
+
+    public int getEnd() {
+        return end;
+    }
+
+    public ParcelableSpan getSpan() {
+        return span;
+    }
 }

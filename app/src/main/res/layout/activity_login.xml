@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_gray_text_color">
+
+    <com.example.bluetoothdemo.activity.GameImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:id="@+id/render"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"/>
+
+    <!--<TextView-->
+        <!--android:id="@+id/scan"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="50dp"-->
+        <!--android:background="@drawable/btn_blue_shape_23"-->
+        <!--android:text="扫描二维码"-->
+        <!--android:gravity="center"-->
+        <!--android:textColor="@color/white"-->
+        <!--android:textSize="18sp"/>-->
+
+</LinearLayout>
