@@ -10,5 +10,7 @@
     <color name="line_color">#e4e4e4</color>
     <color name="Line">#ececec</color>
     <color name="black">#000000</color>
+    <color name="text_black">#323232</color>
     <color name="text_blue">#0BABFE</color>//大蓝
+    <color name="green">#CCFF99</color> //暖绿
 </resources>

@@ -5,6 +5,7 @@ import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
+import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -32,7 +33,9 @@ import com.example.bluetoothdemo.activity.main.adapter.BluetoothDeviceAdapter;
 import com.example.bluetoothdemo.base.BaseRecyclerViewAdapter;
 import com.example.bluetoothdemo.base.ViewHolder;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,11 +84,15 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothReceiver bluetoothReceiver;
 
     private BluetoothDevice connect_device;  //准备连接的设备
+    private BluetoothSocket connect_socekt;
     private BluetooothGattCallback connect_callback;
     /**
      * 是否正在扫描蓝牙设备
      */
     private boolean mScaning = false;
+    private BluetoothSocket client;
+    private Thread serverRead;
+    private OutputStream outToClient;
 //    RxPermissions rxPermissions;
 
     @Override
@@ -94,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 //        rxPermissions = new RxPermissions(this);
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
+        initBluetoothServer();
         initBluetoothDevices();
         if (!bluetoothAdapter.enable()) {
             Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -103,6 +110,39 @@ public class MainActivity extends AppCompatActivity {
             searchBleDevice();
         }
     }
+
+
+    /**
+     * 初始化蓝牙服务端
+     */
+    public void initBluetoothServer(){
+        try {
+            final BluetoothServerSocket serverSocket = bluetoothAdapter.listenUsingInsecureRfcommWithServiceRecord("name",UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
+            new Thread(new Runnable() {  //开启一个线程不断监听
+                @Override
+                public void run() {
+                    try {
+                        client = serverSocket.accept();
+                        BufferedReader reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+                        while (true){
+                            if(reader.ready()) {
+                                String message = reader.readLine();
+                                if (message != null) {
+                                }
+                            }
+                        }
+                    } catch (IOException e) {
+                        Toast.makeText(MainActivity.this,"出错了",Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 
     private void searchBleDevice() {
         startLoading();
@@ -148,12 +188,7 @@ public class MainActivity extends AppCompatActivity {
         phoneAdapter.setOnItemClickListener(new BaseRecyclerViewAdapter.onItemClickListener() {
             @Override
             public void onItemClick(int position) {
-                phoneAdapter.showItemOptions(position);
-//                device.createInsecureRfcommSocketToServiceRecord("uuid"); //传统蓝牙连接方式
-//                device.connectGatt();  //ble蓝牙连接方式
-//                device.createInsecureRfcommSocketToServiceRecord();
-//                device.createRfcommSocketToServiceRecord();
-//                device.createIn
+                phoneAdapter.showItemOptions(position);  //展开 操作按钮（配对  连接  发送文件 发送消息之类
             }
         });
         phoneAdapter.setOnOptionsClick(new BluetoothDeviceAdapter.OnOptionsClick() {
@@ -161,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
             public void clickOptions(View view) {
                 int position = (int) view.getTag();
                 switch (view.getId()) {
-                    case R.id.connect:
+                    case R.id.connect:  //点击连接
                         connect_device = phoneDevices.get(position).getDevice();
                         if (connect_device.getBondState() != BluetoothDevice.BOND_BONDED) {
                             connect_device.createBond();
@@ -175,17 +210,18 @@ public class MainActivity extends AppCompatActivity {
                                         for (ParcelUuid uuid:uuids){
                                             Log.e(TAG, "clickOptions: UUids   " + uuid);
                                         }
-                                        BluetoothSocket socket = connect_device.createRfcommSocketToServiceRecord(UUID.fromString("00001116-0000-1000-8000-00805f9b34fb")); //信息传输固定的uuid
+                                        BluetoothSocket socket = connect_device.createInsecureRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")); //信息传输固定的uuid
                                         if (bluetoothAdapter.isDiscovering()){
                                             bluetoothAdapter.cancelDiscovery();
                                         }
                                         Log.e(TAG, "SocketSendRunnable: 准备链接");
-                                        socket.connect();
-                                        if (socket.isConnected()) {
-                                            socket.getOutputStream();
+                                        if(!socket.isConnected()){
+                                            socket.connect();
                                         }
+                                        serverRead = new Thread(new SocketReceiveRunnable(socket));
+                                        outToClient = socket.getOutputStream();
+                                        Toast.makeText(MainActivity.this,"连接成功",Toast.LENGTH_LONG).show();
                                         Log.e(TAG, "clickOptions: 链接成功");
-                                        new Thread(new SocketSendRunnable(socket)).start();
                                     } catch (IOException e) {
                                         Log.e(TAG, "clickOptions: 链接出错");
                                         e.printStackTrace();
@@ -211,16 +247,31 @@ public class MainActivity extends AppCompatActivity {
     class SocketReceiveRunnable implements Runnable{
 
         BluetoothSocket client;
-
+        BufferedReader reader;
         public SocketReceiveRunnable(BluetoothSocket client) {
             this.client = client;
+            try {
+                reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
 
         @Override
         public void run() {
-
+            while (true){
+                try {
+                    if (reader.ready()){
+                        String message = reader.readLine();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
+
+
 
     class SocketSendRunnable implements Runnable{
 
@@ -229,32 +280,15 @@ public class MainActivity extends AppCompatActivity {
         public SocketSendRunnable(BluetoothSocket client) {
             this.client = client;
             try {
-                if (bluetoothAdapter.isDiscovering()){
-                    bluetoothAdapter.cancelDiscovery();
-                }
-                Log.e(TAG, "SocketSendRunnable: 准备链接");
-                this.client.connect();
-                if (this.client.isConnected()) {
-                    out = this.client.getOutputStream();
-                }
+                out = client.getOutputStream();
             } catch (IOException e) {
-                Log.e(TAG, "SocketSendRunnable: 错误信息");
                 e.printStackTrace();
             }
         }
 
         @Override
         public void run() {
-            try {
-                if (this.client.isConnected()) {
-                    Log.e(TAG, "run: 准备发送");
-                    out.write("nihao".getBytes());
-                    out.close();
-                    Log.e(TAG, "run: 发送完成");
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
         }
     }
 
@@ -288,12 +322,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        if (mScaning) {  //如果还未停止就 停止
-            handler.removeCallbacks(stopScan); //移除消息
-            bluetoothAdapter.stopLeScan(bluetoothScanCallback);
-        }
         unregisterReceiver(bluetoothReceiver);
-        if (bluetoothAdapter != null) {
+        if (mScaning) {  //如果还未停止就 停止
+            bluetoothAdapter.stopLeScan(bluetoothScanCallback);
+            handler.removeCallbacks(stopScan); //移除消息
+        }
+        if (bluetoothAdapter.isDiscovering()) {  //停止搜索
             bluetoothAdapter.cancelDiscovery();
         }
     }
@@ -311,30 +345,25 @@ public class MainActivity extends AppCompatActivity {
                 case BluetoothDevice.ACTION_FOUND:   //扫描到一个设备
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     if (!deviceMacs.contains(device.getAddress())) {
-//                        if (device.getBondState() == BluetoothDevice.BOND_BONDED) {
-//
-//                        } else if (device.getBondState() == BluetoothDevice.BOND_NONE) {
-                        Log.e(TAG, "onReceive: " + device.getName());
                         DeviceBean deviceBean = new DeviceBean(device);
                         normalDevices.add(deviceBean);
-                        deviceMacs.add(device.getAddress());
-                        String type = "";
-                        switch (device.getType()) {
-                            case BluetoothDevice.DEVICE_TYPE_CLASSIC:
-                                type = "经典";
-                                break;
-                            case BluetoothDevice.DEVICE_TYPE_LE:
-                                type = "低功耗";
-                                break;
-                            case BluetoothDevice.DEVICE_TYPE_DUAL:
-                                type = "双模";
-                                break;
-                            case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
-                                type = "未知设备";
-                                break;
-                        }
-                        Log.e(TAG1, "onReceive: " + device.getName() + "  属于 " + type);
-                        switch (device.getBluetoothClass().getMajorDeviceClass()) {
+                        deviceMacs.add(device.getAddress());  //根据地址做筛选（防止经典蓝牙搜索到ble蓝牙后添加到列表）
+//                        String type = "";
+//                        switch (device.getType()) {
+//                            case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+//                                type = "经典";
+//                                break;
+//                            case BluetoothDevice.DEVICE_TYPE_LE:
+//                                type = "低功耗";
+//                                break;
+//                            case BluetoothDevice.DEVICE_TYPE_DUAL:
+//                                type = "双模";
+//                                break;
+//                            case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
+//                                type = "未知设备";
+//                                break;
+//                        }
+                        switch (device.getBluetoothClass().getMajorDeviceClass()) {  //根据蓝牙设备类别分类
                             case BluetoothClass.Device
                                     .Major.MISC:
                                 miscDevices.add(deviceBean);
@@ -360,19 +389,14 @@ public class MainActivity extends AppCompatActivity {
                         }
                     }
                     break;
-                case BluetoothDevice.ACTION_PAIRING_REQUEST:
-                    Log.e(TAG, "onReceive: SCAN_REQUEST");
+                case BluetoothDevice.ACTION_PAIRING_REQUEST:   //监听到配对广播
                     BluetoothDevice device1 = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     switch (device1.getBondState()) {
                         case BluetoothDevice.BOND_BONDED: //配对成功
                             Log.e(TAG, "onReceive: SCAN_REQUEST SUCCESS");
-                            Toast.makeText(MainActivity.this, "已经配对过了", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "已经配对过了", Toast.LENGTH_SHORT).show();  //配对后准备链接
                             connect_callback = new BluetooothGattCallback();
                             connect_device.connectGatt(MainActivity.this, false, connect_callback);
-//                            BluetoothGatt gatt = null;
-//                            BluetooothGattCallback callback = new BluetooothGattCallback();
-//                            gatt = connect_device.connectGatt(MainActivity.this, false, callback);
-//                            callback.setmBluetoothGatt(gatt);
                             break;
                         case BluetoothDevice.BOND_BONDING://配对中
                             Log.e(TAG, "onReceive: SCAN_REQUEST BINDING");
@@ -398,23 +422,22 @@ public class MainActivity extends AppCompatActivity {
                 DeviceBean deviceBean = new DeviceBean(device);
                 normalDevices.add(deviceBean);
                 deviceMacs.add(device.getAddress());
-
-                String type = "";
-                switch (device.getType()) {
-                    case BluetoothDevice.DEVICE_TYPE_CLASSIC:
-                        type = "经典";
-                        break;
-                    case BluetoothDevice.DEVICE_TYPE_LE:
-                        type = "低功耗";
-                        break;
-                    case BluetoothDevice.DEVICE_TYPE_DUAL:
-                        type = "双模";
-                        break;
-                    case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
-                        type = "未知设备";
-                        break;
-                }
-                Log.e(TAG1, "onLeScan: " + device.getName() + "  属于 " + type);
+//                String type = "";
+//                switch (device.getType()) {
+//                    case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+//                        type = "经典";
+//                        break;
+//                    case BluetoothDevice.DEVICE_TYPE_LE:
+//                        type = "低功耗";
+//                        break;
+//                    case BluetoothDevice.DEVICE_TYPE_DUAL:
+//                        type = "双模";
+//                        break;
+//                    case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
+//                        type = "未知设备";
+//                        break;
+//                }
+//                Log.e(TAG1, "onLeScan: " + device.getName() + "  属于 " + type);
                 switch (device.getBluetoothClass().getMajorDeviceClass()) {
                     case BluetoothClass.Device
                             .Major.MISC:
