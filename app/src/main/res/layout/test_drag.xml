@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootView"
+    android:orientation="horizontal" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+
+    <!--<TextView-->
+        <!--android:layout_width="120dp"-->
+        <!--android:layout_height="100dp"-->
+        <!--android:background="@color/text_blue"-->
+        <!--android:text="蓝色"-->
+        <!--android:textColor="@color/white"-->
+        <!--android:gravity="center"-->
+        <!--android:textSize="18sp"/>-->
+
+    <!--<TextView-->
+        <!--android:layout_width="200dp"-->
+        <!--android:layout_height="100dp"-->
+        <!--android:background="#ff0000"-->
+        <!--android:text="红色"-->
+        <!--android:textColor="@color/white"-->
+        <!--android:gravity="center"-->
+        <!--android:layout_marginLeft="20dp"-->
+        <!--android:layout_marginTop="150dp"-->
+        <!--android:textSize="18sp"/>-->
+
+    <!--<TextView-->
+        <!--android:id="@+id/ll_drag"-->
+        <!--android:layout_width="100dp"-->
+        <!--android:layout_height="100dp"-->
+        <!--android:background="#fdbc46"-->
+        <!--android:text="黄色"-->
+        <!--android:textColor="@color/white"-->
+        <!--android:gravity="center"-->
+        <!--android:layout_marginLeft="20dp"-->
+        <!--android:layout_marginTop="120dp"-->
+        <!--android:textSize="18sp"/>-->
+
+    <com.example.bluetoothdemo.TestViewGroup
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:text="你若安好,便是晴天"
+            android:gravity="center"
+            android:padding="10dp"
+            android:background="@color/text_blue"
+            android:textColor="@color/white"/>
+
+
+        <TextView
+            android:id="@+id/two"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:text="你若安不好,那就去死"
+            android:gravity="center"
+            android:padding="10dp"
+            android:background="#FEBE09"
+            android:textColor="@color/white"
+            android:layout_margin="50dp" />
+
+
+    </com.example.bluetoothdemo.TestViewGroup>
+
+    <!--<com.example.bluetoothdemo.DragViewGroup-->
+        <!--android:id="@+id/ll_drag"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="500dp"-->
+        <!--android:orientation="horizontal">-->
+
+        <!--<LinearLayout-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="100dp"-->
+            <!--android:background="@color/text_blue"-->
+            <!--android:visibility="visible">-->
+
+            <!--<TextView-->
+                <!--android:layout_width="match_parent"-->
+                <!--android:layout_height="match_parent"-->
+                <!--android:text="你好大活佛阿萨德和法师打发似的"-->
+                <!--android:textColor="@color/white"-->
+                <!--android:gravity="center"/>-->
+
+        <!--</LinearLayout>-->
+
+
+        <!--<TextView-->
+            <!--android:layout_width="500px"-->
+            <!--android:layout_height="50dp"-->
+            <!--android:text="能显示么"-->
+            <!--android:background="@color/black"-->
+            <!--android:textColor="@color/white"-->
+            <!--android:gravity="center"/>-->
+
+    <!--</com.example.bluetoothdemo.DragViewGroup>-->
+
+</LinearLayout>

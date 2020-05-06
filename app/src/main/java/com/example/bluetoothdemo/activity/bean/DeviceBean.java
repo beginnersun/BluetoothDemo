@@ -14,6 +14,9 @@ public class DeviceBean {
         this.showOptions = false;
     }
 
+    public DeviceBean() {
+    }
+
     public boolean isShowOptions() {
         return showOptions;
     }
